@@ -1,0 +1,16 @@
+__pycache__/
+.pytest_cache/
+*.pyc
+.venv/
+venv/
+node_modules/
+.next/
+.playwright-cli/
+dist/
+.env
+*.env.local
+data/
+*.db
+*.sqlite
+secret.key
+.DS_Store
