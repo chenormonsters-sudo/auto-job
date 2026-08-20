@@ -166,10 +166,14 @@ def search_boss_jobs(keyword: str, city: str, profile_path: str = "", cookie: st
         except Exception:
             pass
         items = []
-        for _ in range(10):
+        for _ in range(12):
             items = page.evaluate(_SCRAPE_JS)
-            if items:
+            if len(items) >= 20:
                 break
+            try:
+                page.evaluate("window.scrollBy(0, 3000)")
+            except Exception:
+                pass
             page.wait_for_timeout(2000)
         items = _filter_relevant_items(keyword, items)
         body_text = ""

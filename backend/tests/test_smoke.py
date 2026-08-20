@@ -31,18 +31,18 @@ def test_create_job():
 
 def test_platform_cookie_is_encrypted():
     resp = client.put(
-        "/api/platforms/boss/account",
+        "/api/platforms/job51/account",
         json={"login_method": "cookie", "cookie": "session=plain-secret; Domain=example.com"},
     )
     assert resp.status_code == 200
     assert resp.json()["has_cookie"] is True
 
-    row = SessionLocal().query(PlatformAccount).filter(PlatformAccount.platform == "boss").first()
+    row = SessionLocal().query(PlatformAccount).filter(PlatformAccount.platform == "job51").first()
     assert row is not None
     assert "plain-secret" not in row.cookie_ref
     assert row.cookie_ref.startswith("gAAAA")
 
-    client.delete("/api/platforms/boss/account")
+    client.delete("/api/platforms/job51/account")
 
 
 def test_browser_adapter_requires_job_url():
