@@ -209,8 +209,12 @@ export default function JobsPage() {
                   <div className="item-header">
                     <input type="checkbox" checked={selectedUrls.includes(r.url)} onChange={() => toggleResult(r.url)} />
                     <strong>{r.title}</strong>
-                    <span className="muted">{r.company || "未知公司"} {r.salary || ""}</span>
+                    <span className="muted">
+                      {r.company || "未知公司"} · {r.salary || "薪资未知"} · {r.location || "地点未知"}
+                      {typeof r.relevance_score === "number" ? ` · 相关度 ${r.relevance_score}` : ""}
+                    </span>
                   </div>
+                  {r.tags?.length > 0 && <div className="muted">{r.tags.join(" / ")}</div>}
                   <div className="action-bar">
                     <a href={r.url} target="_blank" rel="noreferrer">查看岗位</a>
                   </div>

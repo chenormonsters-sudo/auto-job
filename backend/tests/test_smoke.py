@@ -4,6 +4,7 @@ from app.adapters.boss import BossAdapter
 from app.database import SessionLocal
 from app.main import app
 from app.models import PlatformAccount
+from app.services.job_scraper import _relevance_score
 
 client = TestClient(app)
 
@@ -48,3 +49,10 @@ def test_browser_adapter_requires_job_url():
     result = BossAdapter().dry_run(1, "您好")
     assert result["ok"] is False
     assert "URL" in result["message"]
+
+
+def test_search_relevance_filter():
+    assert _relevance_score("后端工程师", {"title": "Java后端开发工程师", "company": ""}) >= 90
+    assert _relevance_score("后端工程师", {"title": "AI大模型工程师", "company": ""}) < 90
+    assert _relevance_score("测试", {"title": "AI测试开发", "company": ""}) >= 90
+    assert _relevance_score("Python后端工程师", {"title": "Java后端开发", "company": ""}) < 90
