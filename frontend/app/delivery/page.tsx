@@ -12,6 +12,9 @@ export default function DeliveryPage() {
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [showConfirm, setShowConfirm] = useState(false);
+  const [semiQueue, setSemiQueue] = useState<any[]>([]);
+  const [semiIndex, setSemiIndex] = useState(0);
+  const [semiDone, setSemiDone] = useState<number[]>([]);
   const [rate, setRate] = useState(20);
   const [fingerprint, setFingerprint] = useState(false);
 
@@ -90,6 +93,65 @@ export default function DeliveryPage() {
     }
   }
 
+  async function copyText(text: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch (_) {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      ta.remove();
+    }
+  }
+
+  function openSemiItem(item: any) {
+    copyText(item.greeting);
+    if (item.job_url) window.open(item.job_url, "_blank");
+  }
+
+  function startSemiAuto() {
+    const queue = items.filter((item) => selected.includes(item.id));
+    if (!queue.length) {
+      setError("请先勾选投递项");
+      return;
+    }
+    const withUrl = queue.filter((item) => item.job_url);
+    if (!withUrl.length) {
+      setError("所选投递项缺少职位 URL，无法打开");
+      return;
+    }
+    setSemiQueue(withUrl);
+    setSemiIndex(0);
+    setSemiDone([]);
+    openSemiItem(withUrl[0]);
+  }
+
+  function semiNext(mark: boolean) {
+    const current = semiQueue[semiIndex];
+    const done = mark && current ? [...semiDone, current.id] : semiDone;
+    setSemiDone(done);
+    if (semiIndex + 1 < semiQueue.length) {
+      setSemiIndex(semiIndex + 1);
+      openSemiItem(semiQueue[semiIndex + 1]);
+    } else {
+      setSemiQueue([]);
+      setSemiIndex(0);
+      if (done.length) {
+        api("/api/applications/semi-delivered", {
+          method: "POST",
+          body: JSON.stringify({ application_ids: done, confirmed: true }),
+        })
+          .then(() => {
+            setInfo(`已标记 ${done.length} 项半自动投递`);
+            load();
+          })
+          .catch((e) => setError(e.message || "标记失败"));
+      }
+    }
+  }
+
   async function toggleFingerprint() {
     setBusy(true);
     setError("");
@@ -146,9 +208,10 @@ export default function DeliveryPage() {
               <div className="item-header">
                 <input type="checkbox" checked={selected.includes(item.id)} onChange={() => toggle(item.id)} />
                 <strong>投递项 #{item.id}</strong>
-                <span className={`status ${item.status}`}>{item.status}</span>
+                <span className={`status ${item.status}`}>{item.status === "semi_delivered" ? "半自动已投递" : item.status}</span>
               </div>
               <pre>{item.greeting}</pre>
+              {item.job_title && <div className="muted">{item.job_company} - {item.job_title}</div>}
             </label>
           ))
         )}
@@ -161,6 +224,9 @@ export default function DeliveryPage() {
           </button>
           <button className="btn-danger" disabled={busy || !selected.length} onClick={() => setShowConfirm(true)}>
             真实投递
+          </button>
+          <button className="btn-secondary" disabled={busy || !selected.length} onClick={startSemiAuto}>
+            半自动投递
           </button>
           <button className="btn-secondary" disabled={!items.length} onClick={exportCsv}>
             导出 CSV
@@ -175,6 +241,21 @@ export default function DeliveryPage() {
             <div className="action-bar">
               <button className="btn-danger" disabled={busy} onClick={realDelivery}>确认投递</button>
               <button className="btn-secondary" disabled={busy} onClick={() => setShowConfirm(false)}>取消</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {semiQueue.length > 0 && semiIndex < semiQueue.length && (
+        <div className="modal-backdrop">
+          <div className="modal">
+            <h3>半自动投递 {semiIndex + 1}/{semiQueue.length}</h3>
+            <p>{semiQueue[semiIndex].job_company || "未知公司"} - {semiQueue[semiIndex].job_title || "未知岗位"}</p>
+            <pre>{semiQueue[semiIndex].greeting}</pre>
+            <p>招呼语已复制，职位页已在新标签页打开。发送完成后点“已发送”。</p>
+            <div className="action-bar">
+              <button className="primary" onClick={() => semiNext(true)}>已发送</button>
+              <button className="btn-secondary" onClick={() => semiNext(false)}>跳过</button>
+              <button className="btn-secondary" onClick={() => { setSemiQueue([]); setSemiIndex(0); }}>取消</button>
             </div>
           </div>
         </div>

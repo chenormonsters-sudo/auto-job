@@ -35,6 +35,9 @@ def list_applications(db: Session = Depends(get_db)):
             greeting=r.greeting,
             status=r.status,
             result_json=json.loads(r.result_json or "{}"),
+            job_url=r.job.url or "",
+            job_title=r.job.title or "",
+            job_company=r.job.company or "",
             created_at=r.created_at,
         )
         for r in rows
@@ -48,6 +51,18 @@ def select_applications(payload: ConfirmSelection, db: Session = Depends(get_db)
         row.status = "confirmed" if payload.confirmed else "pending_confirm"
     db.commit()
     return {"updated": len(rows), "confirmed": payload.confirmed}
+
+
+@router.post("/applications/semi-delivered")
+def mark_semi_delivered(payload: ConfirmSelection, db: Session = Depends(get_db)):
+    if not payload.application_ids:
+        raise HTTPException(status_code=400, detail="请至少选择一个投递项")
+    rows = db.query(Application).filter(Application.id.in_(payload.application_ids)).all()
+    for row in rows:
+        row.status = "semi_delivered"
+        row.result_json = json.dumps({"mode": "semi_auto", "manual": True}, ensure_ascii=False)
+    db.commit()
+    return {"updated": len(rows)}
 
 
 @router.post("/deliveries/dry-run", response_model=DeliveryResult)

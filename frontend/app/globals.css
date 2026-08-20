@@ -139,7 +139,8 @@ pre {
 }
 
 .status.confirmed,
-.status.delivered {
+.status.delivered,
+.status.semi_delivered {
   color: #065f46;
   background: #ecfdf5;
   border-color: #a7f3d0;

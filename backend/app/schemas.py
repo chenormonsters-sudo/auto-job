@@ -75,6 +75,9 @@ class ApplicationOut(ApiModel):
     greeting: str
     status: str
     result_json: dict[str, Any] = {}
+    job_url: str = ""
+    job_title: str = ""
+    job_company: str = ""
     created_at: datetime
 
 
